@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.63dg6sa.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -30,6 +30,8 @@ async function run() {
 
 
     const userCollection = client.db("parcelManagement").collection("users");
+    const parcelCollection = client.db("parcelManagement").collection("parcels");
+
 
     // users api
     app.post('/users', async(req, res) => {
@@ -44,6 +46,80 @@ async function run() {
       res.send(result);
     })
 
+
+    // parcels
+    app.get('/parcels', async(req, res) => {
+      const email = req.query.email;
+      const query = {email: email};
+      const result = await parcelCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
+    app.get('/parcels/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await parcelCollection.findOne(query);
+      res.send(result);
+    })
+
+    
+
+    app.post('/parcels', async(req, res) => {
+      const parcelItem = req.body;
+      const result = await parcelCollection.insertOne(parcelItem);
+      res.send(result);
+    })
+
+    app.patch('/parcels/:id', async(req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          phoneNumber: item.phoneNumber,
+          parcelType: item.parcelType,
+          parcelWeight: item.parcelWeight,
+          receiverName: item.receiverName,
+          receiverNumber: item.receiverNumber,
+          requestedDeliveryDate: item.requestedDeliveryDate,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          deliveryAddress: item.deliveryAddress,
+          price: item.price
+        }
+      }
+
+      
+      
+      const result = await parcelCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+    app.patch('/parcelsCancel/:id', async(req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          bookingStatus: item.bookingStatus,
+          
+        }
+      }
+
+      
+      
+      const result = await parcelCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+
+    // app.delete('/parcels/:id', async(req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) }
+    //   const result = await parcelCollection.deleteOne(express.query);
+    //   res.send(result);
+    // })
 
 
 
