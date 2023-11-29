@@ -10,7 +10,6 @@ app.use(cors());
 app.use(express.json());
 
 
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.63dg6sa.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -34,6 +33,13 @@ async function run() {
 
 
     // users api
+    app.get('/users', async(req, res) => {
+      
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
+
     app.post('/users', async(req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -48,12 +54,39 @@ async function run() {
 
 
     // parcels
-    app.get('/parcels', async(req, res) => {
-      const email = req.query.email;
-      const query = {email: email};
-      const result = await parcelCollection.find(query).toArray();
+    app.get('/allParcels', async(req, res) => {
+       const result = await parcelCollection.find().toArray();
       res.send(result);
     })
+
+
+    // app.get('/parcels', async(req, res) => {
+    //   const email = req.query.email;
+    //   const query = {email: email};
+    //   const result = await parcelCollection.find(query).toArray();
+    //   res.send(result);
+    // })
+
+
+    app.get('/parcels', async (req, res) => {
+      const email = req.query.email;
+      const bookingStatus = req.query.bookingStatus; // New line to get booking status
+    
+      // Build the query object based on email and booking status
+      const query = {
+        email: email,
+        ...(bookingStatus && { bookingStatus: bookingStatus }),
+      };
+    
+      try {
+        const result = await parcelCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error fetching parcels:', error);
+        res.status(500).send('Internal Server Error');
+      }
+    });
+    
 
 
     app.get('/parcels/:id', async(req, res) => {
@@ -64,12 +97,12 @@ async function run() {
     })
 
     
-
     app.post('/parcels', async(req, res) => {
       const parcelItem = req.body;
       const result = await parcelCollection.insertOne(parcelItem);
       res.send(result);
     })
+
 
     app.patch('/parcels/:id', async(req, res) => {
       const item = req.body;
@@ -89,9 +122,8 @@ async function run() {
           price: item.price
         }
       }
+      
 
-      
-      
       const result = await parcelCollection.updateOne(filter, updatedDoc)
       res.send(result);
     })
@@ -107,11 +139,57 @@ async function run() {
         }
       }
 
-      
-      
       const result = await parcelCollection.updateOne(filter, updatedDoc)
       res.send(result);
     })
+
+
+    app.patch('/updateParcels/:id', async(req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      console.log('Received ID:', id);
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          bookingStatus: item.bookingStatus,
+          approximateDeliveryDate: item.approximateDeliveryDate,
+          deliveryManId: item.deliveryManId
+        }
+      }
+
+      const result = await parcelCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+
+    app.patch('/allUsers/admin/:email', async(req, res) => {
+      const item = req.body;
+      const email = req.params.email;
+      const filter = { email: email }
+      const updatedDoc = {
+        $set: {
+          type: 'admin'
+        }
+      }
+      
+      const result = await userCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+    // app.patch('/users', async(req, res) => {
+    //   const item = req.body;
+    //   const id = req.params.id;
+    //   const filter = { _id: new ObjectId(id) }
+    //   const updatedDoc = {
+    //     $set: {
+    //       name: item.displayName,
+    //     }
+    //   }
+    //   const result = await userCollection.updateOne(filter, updatedDoc)
+    //   res.send(result);
+    // })
+
+
 
 
     // app.delete('/parcels/:id', async(req, res) => {
