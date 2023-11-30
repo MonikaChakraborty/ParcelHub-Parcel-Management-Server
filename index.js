@@ -237,6 +237,22 @@ async function run() {
     })
 
 
+    app.patch('/deliveryParcelsCancel/:id', async(req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updatedDoc = {
+        $set: {
+          bookingStatus: item.bookingStatus,
+          
+        }
+      }
+
+      const result = await parcelCollection.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
+
+
     app.patch('/updateParcels/:id', async(req, res) => {
       const item = req.body;
       const id = req.params.id;
